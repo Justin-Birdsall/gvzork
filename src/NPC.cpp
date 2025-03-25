@@ -1,7 +1,7 @@
 #include "../headers/NPC.hpp"
 
-NPC::NPC(const std::string& name, const std::string& description)
-    : name(name), description(description), message_index(0)
+NPC::NPC(const std::string& name, const std::string& description, const std::string& ascii)
+    : name(name), description(description),ascii_art(ascii), message_index(0)
 {
     if (name.empty()) {
         throw std::invalid_argument("NPC name cannot be blank.");
@@ -24,7 +24,9 @@ std::string NPC::get_message() {
     message_index = (message_index + 1) % messages.size();
     return current;
 }
-
+std::string NPC::get_ascii_art() const {
+    return ascii_art;
+}
 std::ostream& operator<<(std::ostream& os, const NPC& npc) {
     os << npc.name;
     return os;

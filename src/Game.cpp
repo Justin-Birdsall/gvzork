@@ -1,19 +1,38 @@
 #include "../headers/Game.hpp"
+#include "../headers/ascii.hpp" 
 #include <iostream>
 #include <sstream>
 #include <ctime>
 #include <chrono>
 #include <iomanip>
+#include <functional>
 #include <algorithm> // for std::remove_if
 
-Game::Game() 
-    : current_weight(0.0f), elf_calorie_need(500), in_progress(true)
-{
+std::map<std::string, std::reference_wrapper<Location>> neighbors;
+
+Game::Game()
+    : straw_hat_ship("Thousand Sunny",
+         "The Straw Hats’ famous ship, with a lion depicted on the bow."),
+      baratie("Baratie",
+         "A floating restaurant ship owned by Zeff. Delicious seafood is served here."),
+      marine_base("Marine Base",
+         "A heavily guarded marine outpost. Navy soldiers are walking around."),
+      shell_town("Shell Town",
+         "A quiet town under marine watch, rumored to have a big swordsman locked up."),
+      syrup_village("Syrup Village",
+         "A peaceful village with a slope leading to a mansion. Home to Usopp."),
+      cocoyashi("Cocoyashi Village",
+         "A tangerine orchard lines the coast. It’s Nami’s hometown."),
+      jaya("Jaya",
+         "A lawless island full of pirates, bars, and shady deals."),
+      one_piece("One Piece",
+         "A fabled location that Gold D. Roger said he left all his treasure."),
+      current_location(std::ref(straw_hat_ship)),  
+      current_weight(0.0f), Luffy_calorie_need(5000), in_progress(true)
+{   
     commands = setup_commands();
     create_world();
 
-    // Start the player in a random location
-    current_location = random_location();
 }
 
 std::map<std::string, Game::Command> Game::setup_commands() {
@@ -35,112 +54,45 @@ std::map<std::string, Game::Command> Game::setup_commands() {
 
     return cmd_map;
 }
-
 void Game::create_world() {
-	//Creating some locations based on the One Piece Lore for Zork
-    Location straw_hat_ship("Thousand Sunny",
-       "The Straw Hats’ famous ship, with a lion depicted on the bow.");
-    Location baratie("Baratie",
-       "A floating restaurant ship  owned by Zeff. Delicious seafood is served here.");
-    Location marine_base("Marine Base",
-       "A heavily guarded marine outpost. Navy soldiers are walking around.");
-    Location shell_town("Shell Town",
-       "A quiet town under marine watch, rumored to have a big swordsman locked up.");
-    Location syrup_village("Syrup Village",
-       "A peaceful village with a slope leading to a mansion. Home to Usopp.");
-    Location cocoyashi("Cocoyashi Village",
-       "A tangerine orchard lines the coast. It’s Nami’s hometown.");
-    Location jaya("Jaya",
-       "A lawless island full of pirates, bars, and shady deals.");
-    Location one_piece("One Piece",
-       "A fabled location that Gold D. Roger said he left all his treasure.");
-
-    // 10 items for rubrik 
-    Item devil_fruit("Devil Fruit", 
-       "A mysterious fruit that grants special powers to the eater \n"
-       "beware that eating it bestows a curse on the user making it impossible to swim",
-       1000, 5.0f);
-    Item meat_on_bone("Meat on the Bone",
-       "Luffy’s favorite meal – restores energy quickly.",
-       500, 3.0f);
-    Item tangerine("Tangerine",
-       "A fresh tangerine from Nami’s orchard.",
-       50, 0.5f);
-    Item marine_sword("Marine Sword", 
-       "A standard issue Navy sword with no special powers.",
-       0, 7.0f);
-    Item onigiri("Onigiri", 
-       "Rice balls – a common East Blue snack!",
-       100, 0.3f);
-    Item log_pose("Log Pose", 
-       "A compass like orb that Points towards specific location.",
-       0, 0.1f);
-    Item rum("Barrel of Rum", 
-       "Strong pirate rum. Not exactly food, but it's consumable with enough courage.",
-       300, 10.0f);
-    Item anchor("Heavy Anchor", 
-       "An anchor from the Thousand Sunny. Way too heavy for practical carrying. \n"
-       "but whose to say it may be useful later...",
-       0, 20.0f);
-    Item stealth_mantle("Stealth Mantle",
-       "A cloak rumored to hide the wearer from marines.",
-       0, 2.0f);
-    Item ramen("Bowl of Seafood Ramen",
-       "A hearty meal made aboard the Baratie, curated by the chef Zeff.",
-       200, 1.0f);
-
     // Add items to locations
-    straw_hat_ship.add_item(anchor);
-    straw_hat_ship.add_item(devil_fruit);
+    straw_hat_ship.add_item(Item("Anchor", 
+       "An anchor from the Thousand Sunny. Way too heavy for practical carrying.", 0, 20.0f));
+    straw_hat_ship.add_item(Item("Devil Fruit", 
+       "A mysterious fruit that grants special powers.", 1000, 5.0f));
 
-    baratie.add_item(ramen);
-    baratie.add_item(rum);
+    baratie.add_item(Item("Bowl of Seafood Ramen", 
+       "A hearty meal made aboard the Baratie.", 200, 1.0f));
+    baratie.add_item(Item("Barrel of Rum", 
+       "Strong pirate rum.", 300, 10.0f));
 
-    marine_base.add_item(marine_sword);
+    marine_base.add_item(Item("Marine Sword", 
+       "A standard issue Navy sword.", 0, 7.0f));
 
-    shell_town.add_item(onigiri);
+    shell_town.add_item(Item("Onigiri", 
+       "Rice balls – a common East Blue snack!", 100, 0.3f));
 
-    cocoyashi.add_item(tangerine);
+    cocoyashi.add_item(Item("Tangerine", 
+       "A fresh tangerine from Nami’s orchard.", 50, 0.5f));
 
-    jaya.add_item(log_pose);
-    jaya.add_item(stealth_mantle);
+    jaya.add_item(Item("Log Pose", 
+       "A compass-like orb that points towards specific locations.", 0, 0.1f));
+    jaya.add_item(Item("Stealth Mantle", 
+       "A cloak rumored to hide the wearer from marines.", 0, 2.0f));
 
-    // NPCs (at least 5)
-    NPC luffy("Luffy", "The Straw Hats Captain who wants to be Pirate King.");
-    luffy.add_message("I'm Luffy! I’m gonna be the Pirate King!");
-    luffy.add_message("*Picking Nose* You got any meat?");
-    luffy.add_message("Let's set sail!");
+    // Add NPCs
+    straw_hat_ship.add_npc(NPC("Luffy", "The Straw Hats Captain who wants to be Pirate King.",luffy_art));
+    marine_base.add_npc(NPC("Zoro", "A swordsman who wields three swords."));
+    baratie.add_npc(NPC("Sanji", "A chivalrous cook with a fiery kick."));
+    cocoyashi.add_npc(NPC("Nami", "A skilled navigator for the Straw Hats."));
+    one_piece.add_npc(NPC("Gold D. Roger", "A mythical pirate who started the new pirate age."));
 
-    NPC zoro("Zoro", "A swordsman who wields three swords.");
-    zoro.add_message("I will become the greatest swordsman in the world!");
-    zoro.add_message("Do you know where I am, I keep losing my sense of direction...");
-    zoro.add_message("Don’t get in my way, or I’ll cut you down.");
-
-    NPC nami("Nami", "A skilled navigator for the Straw Hats.");
-    nami.add_message("I only steal from pirates I don’t like!");
-    nami.add_message("If you need help navigating, let me know");
-
-    NPC sanji("Sanji", "A chivalrous cook with a fiery kick.");
-    sanji.add_message("Anyone hungry? I can whip up a meal!");
-    sanji.add_message("Don’t ever waste food in my kitchen!");
-
-    NPC goldroger("Gold D. Rogger", "A mythical pirate who started the new pirate age \n.");
-    goldroger.add_message("I HAVE LEFT ALL MY TREASURE IN ONE PLACE");
-
-    // Place NPCs
-    straw_hat_ship.add_npc(luffy);
-    marine_base.add_npc(zoro);
-    baratie.add_npc(sanji);
-    cocoyashi.add_npc(nami);
-    one_piece.add_npc(goldroger);
-
-    // Connecting some of the locations for gameplay
-    // one piece should probably be a one-way entrance)
-    straw_hat_ship.add_location("east",baratie);
+    // Connecting locations (ensuring references remain valid)
+    straw_hat_ship.add_location("east", baratie);
     baratie.add_location("west", straw_hat_ship);
 
     baratie.add_location("north", marine_base);
-    marine_base.add_location("south",baratie);
+    marine_base.add_location("south", baratie);
 
     marine_base.add_location("east", shell_town);
     shell_town.add_location("west", marine_base);
@@ -152,22 +104,18 @@ void Game::create_world() {
     cocoyashi.add_location("west", syrup_village);
 
     jaya.add_location("north", baratie);
-    // (One-way from jaya -> baratie if we don't link baratie back to jaya)
-
-    // Make the one piece  "hidden" - only accessible from cocoyashi
     cocoyashi.add_location("south", one_piece);
-    // finding the one piece should symbolize the end of the game no  linking back to cocoyashi
-    // Push the locations into a world vector
-    world_locations.push_back(straw_hat_ship);
-    world_locations.push_back(baratie);
-    world_locations.push_back(marine_base);
-    world_locations.push_back(shell_town);
-    world_locations.push_back(syrup_village);
-    world_locations.push_back(cocoyashi);
-    world_locations.push_back(jaya);
-    world_locations.push_back(one_piece);
-}
 
+    // Ensure locations are properly stored
+    world_locations.push_back(std::ref(straw_hat_ship));
+    world_locations.push_back(std::ref(baratie));
+    world_locations.push_back(std::ref(marine_base));
+    world_locations.push_back(std::ref(shell_town));
+    world_locations.push_back(std::ref(syrup_village));
+    world_locations.push_back(std::ref(cocoyashi));
+    world_locations.push_back(std::ref(jaya));
+    world_locations.push_back(std::ref(one_piece));
+}
 Location Game::random_location() {
     // Choose a random location from our vector
     static std::random_device rd;
@@ -219,10 +167,10 @@ void Game::play() {
     }
 
     // Once the loop ends, check if the elf was satisfied
-    if (elf_calorie_need <= 0) {
-        std::cout << "\n** Congratulations! You have fed the elf enough calories to save GVSU! **\n";
+    if (Luffy_calorie_need <= 0) {
+        std::cout << "\n** Congratulations! You have fed the Luffy enough calories to save GVSU! **\n";
     } else {
-        std::cout << "\n** You have quit or failed. The elf did not get enough calories. **\n";
+        std::cout << "\n** You have quit or failed. Luffy is sad you couldn't stay and eat more meat! **\n";
     }
 }
 //Help 
@@ -250,7 +198,7 @@ void Game::talk(std::vector<std::string> args) {
     npc_name = npc_name.substr(0, npc_name.size()-1); // remove trailing space
 
     // Find the NPC in the current location
-    auto &npcs = current_location.get_npcs();
+    auto &npcs = current_location.get().get_npcs();
     for (auto &npc : npcs) {
         if (npc.get_name() == npc_name) {
             std::cout << npc.get_message() << "\n";
@@ -271,9 +219,10 @@ void Game::meet(std::vector<std::string> args) {
     }
     npc_name = npc_name.substr(0, npc_name.size()-1);
 
-    auto &npcs = current_location.get_npcs();
+    auto &npcs = current_location.get().get_npcs();
     for (auto &npc : npcs) {
         if (npc.get_name() == npc_name) {
+	    std::cout << npc.get_ascii_art(); 
             std::cout << npc.get_description() << "\n";
             return;
         }
@@ -292,7 +241,7 @@ void Game::take_item(std::vector<std::string> args) {
     }
     item_name = item_name.substr(0, item_name.size()-1);
 
-    auto &items = current_location.get_items();
+    auto &items = current_location.get().get_items();
     for (auto it = items.begin(); it != items.end(); ++it) {
         if (it->get_name() == item_name) {
             float new_weight = current_weight + it->get_weight();
@@ -325,18 +274,17 @@ void Game::give_item(std::vector<std::string> args) {
     for (auto it = player_inventory.begin(); it != player_inventory.end(); ++it) {
         if (it->get_name() == item_name) {
             // Remove from player inventory, add to location
-            current_location.add_item(*it);
+            current_location.get().add_item(*it);
             current_weight -= it->get_weight();
 
                 if (it->get_calories() > 0) {
-                    // edible => reduce elf_calorie_need
-                    elf_calorie_need -= it->get_calories();
+                    // edible => reduce Luffy_calorie_need
+                    Luffy_calorie_need -= it->get_calories();
                     std::cout << "The elf happily accepts your offering of " 
                               << it->get_calories() << " calories.\n";
                 } else {
                     // 0 calorie => teleport player randomly
                     std::cout << "The elf is displeased with your 0-calorie offering and teleports you away!\n";
-                    current_location = random_location();
                 }
 
             player_inventory.erase(it);
@@ -354,21 +302,17 @@ void Game::go(std::vector<std::string> args) {
     }
     std::string direction = args[0];  // We'll assume first token is direction
     // Mark the location as visited
-    current_location.set_visited();
+    current_location.get().set_visited();
 
-    // Check weight restriction
-    if (current_weight > 30.0f) {
-        std::cout << "You're over 30 lbs. You cannot move! Maybe drop something first.\n";
-        return;
-    }
-
-    auto &neighbors = current_location.get_locations();
+    auto &neighbors = current_location.get().get_locations();
     auto it = neighbors.find(direction);
     if (it == neighbors.end()) {
         std::cout << "You can't go that way.\n";
         return;
     }
-    current_location = it->second; // Move to neighbor
+
+    Location &new_Location = it -> second.get(); 
+    current_location = std::ref(new_Location);  // Move to neighbor
     std::cout << "You travel " << direction << "...\n";
     std::cout << current_location << "\n"; // auto-LOOK
 }
@@ -428,7 +372,6 @@ void Game::eat(std::vector<std::string> args) {
 void Game::special_move(std::vector<std::string> args) {
     // random teleport maybe add to specific island without it being connected if time
     std::cout << "You perform a special move 'Shambles' and teleport!\n";
-    current_location = random_location();
     std::cout << current_location << "\n";
 }
 

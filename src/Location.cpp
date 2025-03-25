@@ -1,8 +1,6 @@
 #include "../headers/Location.hpp"
 Location::Location()
-    : name("Unknown"), description("Placeholder"), visited(false)
-{
-}
+    : name("Unknown"), description("Placeholder"), visited(false) { }
 
 Location::Location(const std::string& name, const std::string& description)
     : name(name), description(description), visited(false)
@@ -15,19 +13,15 @@ Location::Location(const std::string& name, const std::string& description)
     }
 }
 
-bool Location::get_visited() const {
-    return visited;
-}
+bool Location::get_visited() const { return visited; }
 
-void Location::set_visited() {
-    visited = true; 
-}
+void Location::set_visited() { visited = true; }
 
-std::map<std::string, Location>& Location::get_locations() {
+std::map<std::string, std::reference_wrapper<Location>>& Location::get_locations() {
     return neighbors;
 }
 
-void Location::add_location(const std::string &direction, const Location &loc) {
+void Location::add_location(const std::string &direction, Location &loc) {
     if (direction.empty()) {
         throw std::invalid_argument("Direction cannot be blank.");
     }
@@ -38,21 +32,13 @@ void Location::add_location(const std::string &direction, const Location &loc) {
     neighbors.insert({ direction, loc });
 }
 
-void Location::add_npc(const NPC& npc) {
-    npcs.push_back(npc);
-}
+void Location::add_npc(const NPC& npc) { npcs.push_back(npc); }
 
-std::vector<NPC>& Location::get_npcs() {
-    return npcs;
-}
+std::vector<NPC>& Location::get_npcs() { return npcs; }
 
-void Location::add_item(const Item& item) {
-    items.push_back(item);
-}
+void Location::add_item(const Item& item) { items.push_back(item); }
 
-std::vector<Item>& Location::get_items() {
-    return items;
-}
+std::vector<Item>& Location::get_items() { return items; }
 
 std::ostream& operator<<(std::ostream& os, const Location& loc) {
     os << loc.name << " - " << loc.description << "\n";
